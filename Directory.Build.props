@@ -1,0 +1,24 @@
+<Project>
+
+  <!-- Centralized versions and metadata shared by every project in the repo. -->
+  <PropertyGroup>
+    <ReactorPackageVersion>0.1.0-preview.11</ReactorPackageVersion>
+    <WindowsAppSdkVersion>2.2.0</WindowsAppSdkVersion>
+
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Shared package metadata (applied to packable projects). -->
+    <Authors>Reactor Community</Authors>
+    <Company>Reactor Community</Company>
+    <Product>Reactor.Community.LeaderLine</Product>
+    <Copyright>Copyright (c) 2026 Reactor Community</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/nsreehari/ReactorLeaderLine</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nsreehari/ReactorLeaderLine</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>reactor;winui;leader-line;connector;diagram;arrow;canvas</PackageTags>
+  </PropertyGroup>
+
+</Project>
