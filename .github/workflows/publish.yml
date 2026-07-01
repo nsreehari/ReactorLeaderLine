@@ -52,7 +52,7 @@ jobs:
       - name: Push to NuGet.org
         shell: bash
         run: |
-          dotnet nuget push "artifacts/*.nupkg" \
+          dotnet nuget push artifacts/*.nupkg \
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
