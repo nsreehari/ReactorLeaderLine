@@ -59,13 +59,29 @@ internal static class LeaderLineRenderer
                 .WithKey($"ll-outline-{key++}"));
         }
 
-        // Main stroke.
-        children.Add(StrokePath(g)
+        // Main stroke. The dash pattern uses the declarative StrokeDashArray modifier;
+        // only the (imperative) marching-ants animation and dash cap fall back to .Set.
+        PathElement stroke = StrokePath(g)
             .Stroke(StrokeBrush())
             .StrokeThickness(p.Size)
-            .Opacity(p.Opacity)
-            .Set(path => ApplyDash(path, p))
-            .WithKey($"ll-stroke-{key++}"));
+            .Opacity(p.Opacity);
+
+        if (p.Dash is { } dash)
+        {
+            double unit = Math.Max(p.Size, 0.1);
+            stroke = stroke
+                .StrokeDashArray(dash.Length / unit, dash.Gap / unit)
+                .Set(path =>
+                {
+                    path.StrokeDashCap = PenLineCap.Round;
+                    if (dash.Animate)
+                    {
+                        AnimateDash(path, dash, unit);
+                    }
+                });
+        }
+
+        children.Add(stroke.WithKey($"ll-stroke-{key++}"));
 
         // Plugs.
         if (p.EndPlug != LeaderLinePlug.None)
@@ -88,22 +104,8 @@ internal static class LeaderLineRenderer
     private static PathElement StrokePath(ConnectorGeometry g)
         => Path2D().Set(path => path.Data = ToPathGeometry(g));
 
-    private static void ApplyDash(Path path, LeaderLineProps p)
+    private static void AnimateDash(Path path, LeaderLineDash dash, double unit)
     {
-        if (p.Dash is not { } dash)
-        {
-            return;
-        }
-
-        double unit = Math.Max(p.Size, 0.1);
-        path.StrokeDashArray = new DoubleCollection { dash.Length / unit, dash.Gap / unit };
-        path.StrokeDashCap = PenLineCap.Round;
-
-        if (!dash.Animate)
-        {
-            return;
-        }
-
         var anim = new DoubleAnimation
         {
             From = 0,

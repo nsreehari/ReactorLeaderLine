@@ -46,6 +46,7 @@ Place a `LeaderLine` as a sibling of the elements it connects, inside a shared
 | `Visible` | `bool` | `true` | Hide without unmounting. |
 | `Opacity` | `double` | `1` | Overall opacity. |
 | `CornerRadius` | `double` | `0` | Fillets the right-angle elbows of `Grid` routing. Ignored by other styles. |
+| `RefreshToken` | `object?` | `null` | Change this value to force a re-measure/re-route (declarative "refresh now"). |
 
 ## Anchors
 
@@ -77,6 +78,18 @@ new AreaAnchor(double X, double Y, double Width, double Height, LeaderLineSocket
 ```
 
 An arbitrary rectangle; the socket picks which side the line attaches to.
+
+### `PointerAnchor`
+
+```csharp
+new PointerAnchor(Func<FrameworkElement?> Track)
+new PointerAnchor(FrameworkElement element)
+```
+
+A mouse-follow endpoint: it tracks the live cursor over `Track`. The connector is
+drawn while the pointer is over the tracked element and hides when it leaves. Give the
+tracked element a non-`null` background (e.g. transparent) so it receives pointer moves
+across its whole surface, and use an element that shares the overlay's coordinate space.
 
 ## Enums
 

@@ -21,6 +21,7 @@ internal sealed class SampleApp : Component
 
     public override Element Render()
     {
+        var rootRef = UseRef<FrameworkElement?>(null);
         var boxSource = UseRef<FrameworkElement?>(null);
         var boxTarget = UseRef<FrameworkElement?>(null);
         var boxNote = UseRef<FrameworkElement?>(null);
@@ -77,7 +78,24 @@ internal sealed class SampleApp : Component
                 Color: Teal,
                 Size: 2,
                 MiddleLabel: "magnet",
-                Outline: true))
-        );
+                Outline: true)),
+
+            // Pointer-follow: the end endpoint tracks the cursor over the whole surface.
+            Component<LeaderLine, LeaderLineProps>(new LeaderLineProps(
+                Start: new ElementAnchor(() => boxSource.Current, LeaderLineSocket.Right),
+                End: new PointerAnchor(() => rootRef.Current),
+                Path: LeaderLinePath.Straight,
+                EndPlug: LeaderLinePlug.Arrow,
+                Color: Indigo,
+                Size: 1.6,
+                EndLabel: "cursor"))
+        )
+        .Set(canvas =>
+        {
+            rootRef.Current = canvas;
+            // A transparent background lets the canvas receive pointer moves everywhere,
+            // not only over its child elements.
+            canvas.Background = new SolidColorBrush(Colors.Transparent);
+        });
     }
 }

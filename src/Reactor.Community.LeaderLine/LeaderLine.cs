@@ -4,6 +4,7 @@ using Microsoft.UI.Reactor;
 using Microsoft.UI.Reactor.Core;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Reactor.Community.LeaderLine.Geometry;
 using Reactor.Community.LeaderLine.Internal;
@@ -31,7 +32,13 @@ public sealed class LeaderLine : Component<LeaderLineProps>
     {
         var canvasRef = UseRef<Canvas?>(null);
         var lastGeometry = UseRef<ConnectorGeometry?>(null);
+        var pointerPos = UseRef<GeoPoint?>(null);
         var (geometry, setGeometry) = UseState<ConnectorGeometry?>(null);
+
+        // Resolve any pointer-follow tracking elements during render so the effect can
+        // re-subscribe when they change, and so RefreshToken can force a recompute.
+        FrameworkElement? trackStart = (Props.Start as PointerAnchor)?.Track();
+        FrameworkElement? trackEnd = (Props.End as PointerAnchor)?.Track();
 
         UseEffect(
             () =>
@@ -44,7 +51,7 @@ public sealed class LeaderLine : Component<LeaderLineProps>
 
                 void Recompute()
                 {
-                    ConnectorGeometry? next = Props.Visible ? Compute(canvas, Props) : null;
+                    ConnectorGeometry? next = Props.Visible ? Compute(canvas, Props, pointerPos.Current) : null;
                     if (GeometryEquals(lastGeometry.Current, next))
                     {
                         return;
@@ -56,10 +63,66 @@ public sealed class LeaderLine : Component<LeaderLineProps>
 
                 Recompute();
 
-                EventHandler<object> handler = (_, _) => Recompute();
-                canvas.LayoutUpdated += handler;
-                return () => canvas.LayoutUpdated -= handler;
-            });
+                EventHandler<object> layoutHandler = (_, _) => Recompute();
+                canvas.LayoutUpdated += layoutHandler;
+
+                // Bridge native pointer input into declarative state: on move we store the
+                // cursor position and recompute; on exit we clear it so the endpoint (and
+                // therefore the line) drops out until the pointer returns.
+                var pointerTargets = new List<FrameworkElement>();
+                if (trackStart is not null)
+                {
+                    pointerTargets.Add(trackStart);
+                }
+
+                if (trackEnd is not null && !ReferenceEquals(trackEnd, trackStart))
+                {
+                    pointerTargets.Add(trackEnd);
+                }
+
+                PointerEventHandler? movedHandler = null;
+                PointerEventHandler? exitedHandler = null;
+                if (pointerTargets.Count > 0)
+                {
+                    movedHandler = (_, e) =>
+                    {
+                        Point pt = e.GetCurrentPoint(canvas).Position;
+                        pointerPos.Current = new GeoPoint(pt.X, pt.Y);
+                        Recompute();
+                    };
+                    exitedHandler = (_, _) =>
+                    {
+                        pointerPos.Current = null;
+                        Recompute();
+                    };
+
+                    foreach (FrameworkElement target in pointerTargets)
+                    {
+                        target.PointerMoved += movedHandler;
+                        target.PointerExited += exitedHandler;
+                    }
+                }
+
+                return () =>
+                {
+                    canvas.LayoutUpdated -= layoutHandler;
+                    foreach (FrameworkElement target in pointerTargets)
+                    {
+                        if (movedHandler is not null)
+                        {
+                            target.PointerMoved -= movedHandler;
+                        }
+
+                        if (exitedHandler is not null)
+                        {
+                            target.PointerExited -= exitedHandler;
+                        }
+                    }
+                };
+            },
+            trackStart!,
+            trackEnd!,
+            Props.RefreshToken!);
 
         var children = new List<Element>();
         if (Props.Visible && geometry is not null)
@@ -76,10 +139,10 @@ public sealed class LeaderLine : Component<LeaderLineProps>
             });
     }
 
-    private static ConnectorGeometry? Compute(Canvas root, LeaderLineProps p)
+    private static ConnectorGeometry? Compute(Canvas root, LeaderLineProps p, GeoPoint? pointer)
     {
-        if (!TryResolveReference(root, p.Start, out GeoRect? startBox, out GeoPoint startRef, out LeaderLineSocket startSocket)
-            || !TryResolveReference(root, p.End, out GeoRect? endBox, out GeoPoint endRef, out LeaderLineSocket endSocket))
+        if (!TryResolveReference(root, p.Start, pointer, out GeoRect? startBox, out GeoPoint startRef, out LeaderLineSocket startSocket)
+            || !TryResolveReference(root, p.End, pointer, out GeoRect? endBox, out GeoPoint endRef, out LeaderLineSocket endSocket))
         {
             return null;
         }
@@ -98,6 +161,7 @@ public sealed class LeaderLine : Component<LeaderLineProps>
     private static bool TryResolveReference(
         Canvas root,
         LeaderLineAnchor anchor,
+        GeoPoint? pointer,
         out GeoRect? box,
         out GeoPoint reference,
         out LeaderLineSocket socket)
@@ -109,6 +173,20 @@ public sealed class LeaderLine : Component<LeaderLineProps>
                 reference = new GeoPoint(pt.X, pt.Y);
                 socket = LeaderLineSocket.Auto;
                 return true;
+
+            case PointerAnchor when pointer is { } cursor:
+                box = null;
+                reference = cursor;
+                socket = LeaderLineSocket.Auto;
+                return true;
+
+            case PointerAnchor:
+                // Pointer has not entered the tracked element yet; leave this endpoint
+                // unresolved so the connector stays hidden until the cursor arrives.
+                box = null;
+                reference = default;
+                socket = LeaderLineSocket.Auto;
+                return false;
 
             case AreaAnchor area:
                 var areaRect = new GeoRect(area.X, area.Y, area.Width, area.Height);

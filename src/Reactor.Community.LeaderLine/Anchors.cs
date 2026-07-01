@@ -35,6 +35,28 @@ public sealed record ElementAnchor(Func<FrameworkElement?> Resolve, LeaderLineSo
 public sealed record PointAnchor(double X, double Y) : LeaderLineAnchor;
 
 /// <summary>
+/// Anchors a connector endpoint to the live pointer position while the pointer is over
+/// <paramref name="Track"/>. The endpoint follows the cursor; the connector is not drawn
+/// until the pointer first moves over the tracked element, and hides again when the
+/// pointer leaves it. Coordinates are taken relative to the connector overlay, so the
+/// tracked element should share the overlay's coordinate space (typically the same
+/// container). Give the tracked element a non-<c>null</c> background (e.g. transparent)
+/// so it receives pointer input across its whole surface.
+/// </summary>
+/// <param name="Track">
+/// The element whose pointer movement drives the endpoint. Pass a closure over a Reactor
+/// ref: <c>() =&gt; rootRef.Current</c>.
+/// </param>
+public sealed record PointerAnchor(Func<FrameworkElement?> Track) : LeaderLineAnchor
+{
+    /// <summary>Tracks the pointer over an already-materialized element.</summary>
+    public PointerAnchor(FrameworkElement element)
+        : this(() => element)
+    {
+    }
+}
+
+/// <summary>
 /// Anchors a connector endpoint to a fixed rectangle in the overlay's coordinate space.
 /// The attachment side is chosen from <paramref name="Socket"/>.
 /// </summary>

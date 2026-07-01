@@ -57,6 +57,7 @@ size or position by hand — the line follows the elements.
 | `ElementAnchor(() => refEl, socket)` | Connect to a live element; `socket` picks the side (`Auto` by default). |
 | `PointAnchor(x, y)` | Connect to a fixed canvas coordinate. |
 | `AreaAnchor(x, y, width, height, socket)` | Connect to an arbitrary rectangle. |
+| `PointerAnchor(() => trackEl)` | Follow the mouse cursor over `trackEl` (mouse-follow endpoint). |
 
 ```csharp
 new LeaderLineProps(

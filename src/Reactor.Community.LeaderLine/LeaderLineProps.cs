@@ -34,6 +34,12 @@ namespace Reactor.Community.LeaderLine;
 /// routing. When <c>0</c> (the default) elbows are sharp; larger values fillet them.
 /// Ignored by non-orthogonal routing styles.
 /// </param>
+/// <param name="RefreshToken">
+/// A declarative refresh signal. Changing this value (for example an incrementing counter
+/// or a fresh object) forces the connector to re-measure and re-route — the Reactor-native
+/// replacement for an imperative "refresh now" call. Useful after an off-layout change
+/// (external scroll or resize) that does not itself raise a layout pass.
+/// </param>
 public sealed record LeaderLineProps(
     LeaderLineAnchor Start,
     LeaderLineAnchor End,
@@ -53,4 +59,5 @@ public sealed record LeaderLineProps(
     string? EndLabel = null,
     bool Visible = true,
     double Opacity = 1,
-    double CornerRadius = 0);
+    double CornerRadius = 0,
+    object? RefreshToken = null);

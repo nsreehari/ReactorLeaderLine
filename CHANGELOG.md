@@ -5,6 +5,29 @@ All notable changes to `Reactor.Community.LeaderLine` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0-preview.1] - 2026-07-01
+
+Tracks Reactor `0.1.0-preview.11`.
+
+### Added
+
+- `PointerAnchor` — a mouse-follow endpoint that tracks the live cursor over a given
+  element. The connector is drawn while the pointer is over the tracked element and
+  hides when it leaves. Pointer input is bridged into declarative state inside the
+  component's effect (with full subscription cleanup).
+- `LeaderLineProps.RefreshToken` — a declarative "refresh now" signal. Changing the
+  value forces the connector to re-measure and re-route, replacing the need for an
+  imperative `RefreshPosition()` method (the Reactor-native way is to change a prop).
+
+### Changed
+
+- The dashed-stroke pattern now uses the declarative `StrokeDashArray` modifier;
+  only the marching-ants animation and dash cap remain imperative `.Set` seams.
+
+### Deferred
+
+- Polygon area anchors remain deferred to a later preview.
+
 ## [0.2.0-preview.1] - 2026-07-01
 
 Tracks Reactor `0.1.0-preview.11`.

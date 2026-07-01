@@ -13,7 +13,8 @@ declarative — you describe the connector as props and Reactor keeps it in sync
 | `new LeaderLine(start, end, opts)` | `Component<LeaderLine, LeaderLineProps>(new LeaderLineProps(...))` |
 | `LeaderLine.pointAnchor(el, {x, y})` | `PointAnchor(x, y)` |
 | `LeaderLine.areaAnchor(el, {...})` | `AreaAnchor(x, y, width, height)` |
-| `line.position()` (manual refresh) | automatic — driven by `LayoutUpdated` |
+| `LeaderLine.mouseHoverAnchor(el)` | `PointerAnchor(() => el)` (mouse-follow) |
+| `line.position()` (manual refresh) | automatic — driven by `LayoutUpdated`; force one by changing `RefreshToken` |
 | `path: 'straight' \| 'arc' \| 'fluid' \| 'magnet' \| 'grid'` | `LeaderLinePath` enum |
 | `socketGravity` / `socket` | `LeaderLineSocket` + internal gravity heuristics |
 | `startPlug` / `endPlug` (`arrow`, `disc`, `square`, `behind`) | `LeaderLinePlug` (`Arrow`, `Disc`, `Square`, `None`) |
@@ -27,9 +28,10 @@ declarative — you describe the connector as props and Reactor keeps it in sync
 ## Intentional differences
 
 - **Declarative, not imperative.** There is no `position()`, `show()`, or `remove()`
-  to call. You change props (or the elements move) and the line updates. This matches
-  Reactor's model and removes the class of bugs where a line drifts because a manual
-  refresh was missed.
+  to call. You change props (or the elements move) and the line updates. When an
+  off-layout change needs a nudge, change the `RefreshToken` prop instead of calling an
+  imperative refresh. This matches Reactor's model and removes the class of bugs where a
+  line drifts because a manual refresh was missed.
 - **Anchors resolve lazily.** `ElementAnchor` takes a `Func<FrameworkElement?>` so a
   connector can be declared before its endpoints exist, and safely no-ops until they
   are measured.
@@ -42,6 +44,4 @@ declarative — you describe the connector as props and Reactor keeps it in sync
 
 ## Not (yet) implemented
 
-- Mouse-follow / hover anchor (`LeaderLine.mouseHoverAnchor`).
 - Polygon area anchors.
-- Imperative `RefreshPosition` escape hatch.
