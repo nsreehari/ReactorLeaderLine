@@ -36,10 +36,16 @@ public sealed class LeaderLine : Component<LeaderLineProps>
     /// <summary>Builds the connector overlay and wires up automatic re-positioning.</summary>
     public override Element Render()
     {
-        var canvasRef = UseRef<Canvas?>(null);
         var lastGeometry = UseRef<ConnectorGeometry?>(null);
         var pointerPos = UseRef<GeoPoint?>(null);
         var (geometry, setGeometry) = UseState<ConnectorGeometry?>(null);
+
+        // The overlay canvas is surfaced through a callback ref into state (not a plain
+        // UseRef) so that assigning it triggers a re-render and re-runs the measurement
+        // effect below. Reactor runs passive effects *before* the .Set ref callback fires,
+        // so a plain ref would be null on the effect's only run and — because the effect's
+        // dependencies never change — it would never recover and no line would ever draw.
+        var (canvas, setCanvas) = UseState<Canvas?>(null);
 
         // Follow the Reactor theme + context: UseIsDarkTheme re-renders this component
         // whenever the effective colour scheme flips, and UseContext lets an ancestor
@@ -55,7 +61,6 @@ public sealed class LeaderLine : Component<LeaderLineProps>
         UseEffect(
             () =>
             {
-                Canvas? canvas = canvasRef.Current;
                 if (canvas is null)
                 {
                     return () => { };
@@ -132,6 +137,7 @@ public sealed class LeaderLine : Component<LeaderLineProps>
                     }
                 };
             },
+            canvas!,
             trackStart!,
             trackEnd!,
             Props.RefreshToken!);
@@ -144,11 +150,18 @@ public sealed class LeaderLine : Component<LeaderLineProps>
         }
 
         return Canvas(children.ToArray())
-            .Set(canvas =>
+            .Set(c =>
             {
-                canvasRef.Current = canvas;
-                canvas.IsHitTestVisible = false;
-                canvas.Background = null;
+                // Callback ref: publish the canvas into state the first time we see it so
+                // the measurement effect can run against a live canvas. Guard against the
+                // re-render loop by only updating state when the instance actually changes.
+                if (!ReferenceEquals(canvas, c))
+                {
+                    setCanvas(c);
+                }
+
+                c.IsHitTestVisible = false;
+                c.Background = null;
             });
     }
 
