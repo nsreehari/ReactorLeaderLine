@@ -65,15 +65,18 @@ internal sealed class SampleApp : Component
                 EndPlug: LeaderLinePlug.Disc,
                 Dash: new LeaderLineDash(6, 4, Animate: true),
                 Color: Amber,
-                Size: 2)),
+                Size: 2,
+                CornerRadius: 14,
+                MiddleLabel: "grid • rounded")),
 
             Component<LeaderLine, LeaderLineProps>(new LeaderLineProps(
                 Start: new ElementAnchor(() => boxNote.Current, LeaderLineSocket.Right),
                 End: new ElementAnchor(() => boxTarget.Current, LeaderLineSocket.Bottom),
-                Path: LeaderLinePath.Arc,
+                Path: LeaderLinePath.Magnet,
                 EndPlug: LeaderLinePlug.Arrow,
                 Color: Teal,
                 Size: 2,
+                MiddleLabel: "magnet",
                 Outline: true))
         );
     }

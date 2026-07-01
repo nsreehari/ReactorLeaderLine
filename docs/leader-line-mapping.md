@@ -36,13 +36,12 @@ declarative — you describe the connector as props and Reactor keeps it in sync
 - **Coordinate space is a shared `Canvas`.** The web library positions against the
   document `body`; here the connector overlay lives in the same `Canvas` as its
   anchors, so `PointAnchor`/`AreaAnchor` are in that canvas's coordinates.
-- **A subset of plugs/paths in preview.** `Magnet` currently falls back to `Fluid`,
-  and the plug set is `None`/`Arrow`/`Disc`/`Square`. See the
+- **A subset of plugs/paths in preview.** The plug set is
+  `None`/`Arrow`/`Disc`/`Square`. See the
   [CHANGELOG](../CHANGELOG.md) for deferred items.
 
 ## Not (yet) implemented
 
 - Mouse-follow / hover anchor (`LeaderLine.mouseHoverAnchor`).
 - Polygon area anchors.
-- Distinct `Magnet` routing.
 - Imperative `RefreshPosition` escape hatch.

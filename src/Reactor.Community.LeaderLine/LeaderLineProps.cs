@@ -29,6 +29,11 @@ namespace Reactor.Community.LeaderLine;
 /// <param name="EndLabel">Optional text near the end endpoint.</param>
 /// <param name="Visible">Whether the connector is drawn.</param>
 /// <param name="Opacity">Overall opacity, 0–1.</param>
+/// <param name="CornerRadius">
+/// Corner radius, in pixels, for the right-angle elbows of <see cref="LeaderLinePath.Grid"/>
+/// routing. When <c>0</c> (the default) elbows are sharp; larger values fillet them.
+/// Ignored by non-orthogonal routing styles.
+/// </param>
 public sealed record LeaderLineProps(
     LeaderLineAnchor Start,
     LeaderLineAnchor End,
@@ -47,4 +52,5 @@ public sealed record LeaderLineProps(
     string? MiddleLabel = null,
     string? EndLabel = null,
     bool Visible = true,
-    double Opacity = 1);
+    double Opacity = 1,
+    double CornerRadius = 0);

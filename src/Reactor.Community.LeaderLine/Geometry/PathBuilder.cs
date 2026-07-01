@@ -12,16 +12,27 @@ public static class PathBuilder
     private const double MinGravity = 48;
     private const double MaxGravity = 160;
     private const double GravityFactor = 0.4;
+    private const double MagnetLeadMin = 16;
+    private const double MagnetLeadMax = 40;
+    private const double MagnetLeadFactor = 0.2;
 
     /// <summary>
     /// Builds the connector geometry for the given endpoints and <paramref name="path"/> style.
     /// </summary>
-    public static ConnectorGeometry Build(EndpointGeometry start, EndpointGeometry end, LeaderLinePath path)
+    /// <param name="start">The resolved start endpoint.</param>
+    /// <param name="end">The resolved end endpoint.</param>
+    /// <param name="path">The routing style.</param>
+    /// <param name="cornerRadius">
+    /// Corner radius for orthogonal (<see cref="LeaderLinePath.Grid"/>) routing. When
+    /// greater than zero the right-angle elbows are filleted; ignored by other styles.
+    /// </param>
+    public static ConnectorGeometry Build(EndpointGeometry start, EndpointGeometry end, LeaderLinePath path, double cornerRadius = 0)
         => path switch
         {
             LeaderLinePath.Straight => BuildStraight(start, end),
             LeaderLinePath.Arc => BuildArc(start, end),
-            LeaderLinePath.Grid => BuildGrid(start, end),
+            LeaderLinePath.Grid => BuildGrid(start, end, cornerRadius),
+            LeaderLinePath.Magnet => BuildMagnet(start, end),
             _ => BuildFluid(start, end),
         };
 
@@ -66,11 +77,44 @@ public static class PathBuilder
         return new ConnectorGeometry(a, new ConnectorSegment[] { new CubicSegmentTo(c1, c2, b) });
     }
 
-    private static ConnectorGeometry BuildGrid(EndpointGeometry start, EndpointGeometry end)
+    /// <summary>
+    /// Magnet routing: leave each endpoint travelling straight along its socket for a
+    /// short lead, then join the two leads with a smooth cubic. This keeps the plug
+    /// firmly "docked" to its side before the curve begins.
+    /// </summary>
+    private static ConnectorGeometry BuildMagnet(EndpointGeometry start, EndpointGeometry end)
+    {
+        double lead = Math.Clamp(Distance(start.Point, end.Point) * MagnetLeadFactor, MagnetLeadMin, MagnetLeadMax);
+
+        var l1 = new GeoPoint(start.Point.X + (start.Direction.X * lead), start.Point.Y + (start.Direction.Y * lead));
+        var l2 = new GeoPoint(end.Point.X + (end.Direction.X * lead), end.Point.Y + (end.Direction.Y * lead));
+
+        double g = Gravity(l1, l2);
+        var c1 = new GeoPoint(l1.X + (start.Direction.X * g), l1.Y + (start.Direction.Y * g));
+        var c2 = new GeoPoint(l2.X + (end.Direction.X * g), l2.Y + (end.Direction.Y * g));
+
+        return new ConnectorGeometry(start.Point, new ConnectorSegment[]
+        {
+            new LineSegmentTo(l1),
+            new CubicSegmentTo(c1, c2, l2),
+            new LineSegmentTo(end.Point),
+        });
+    }
+
+    private static ConnectorGeometry BuildGrid(EndpointGeometry start, EndpointGeometry end, double cornerRadius)
+    {
+        IReadOnlyList<GeoPoint> points = GridPoints(start, end);
+        return cornerRadius > 0
+            ? RoundedPolyline(points, cornerRadius)
+            : Polyline(points);
+    }
+
+    /// <summary>Builds the orthogonal polyline vertices (start, elbows..., end) for Grid routing.</summary>
+    private static List<GeoPoint> GridPoints(EndpointGeometry start, EndpointGeometry end)
     {
         GeoPoint a = start.Point;
         GeoPoint b = end.Point;
-        var segments = new List<ConnectorSegment>();
+        var points = new List<GeoPoint> { a };
 
         bool startHorizontal = Math.Abs(start.Direction.X) >= Math.Abs(start.Direction.Y);
         bool endHorizontal = Math.Abs(end.Direction.X) >= Math.Abs(end.Direction.Y);
@@ -78,28 +122,75 @@ public static class PathBuilder
         if (startHorizontal && endHorizontal)
         {
             double midX = (a.X + b.X) / 2;
-            segments.Add(new LineSegmentTo(new GeoPoint(midX, a.Y)));
-            segments.Add(new LineSegmentTo(new GeoPoint(midX, b.Y)));
-            segments.Add(new LineSegmentTo(b));
+            points.Add(new GeoPoint(midX, a.Y));
+            points.Add(new GeoPoint(midX, b.Y));
         }
         else if (!startHorizontal && !endHorizontal)
         {
             double midY = (a.Y + b.Y) / 2;
-            segments.Add(new LineSegmentTo(new GeoPoint(a.X, midY)));
-            segments.Add(new LineSegmentTo(new GeoPoint(b.X, midY)));
-            segments.Add(new LineSegmentTo(b));
+            points.Add(new GeoPoint(a.X, midY));
+            points.Add(new GeoPoint(b.X, midY));
         }
         else if (startHorizontal)
         {
-            segments.Add(new LineSegmentTo(new GeoPoint(b.X, a.Y)));
-            segments.Add(new LineSegmentTo(b));
+            points.Add(new GeoPoint(b.X, a.Y));
         }
         else
         {
-            segments.Add(new LineSegmentTo(new GeoPoint(a.X, b.Y)));
-            segments.Add(new LineSegmentTo(b));
+            points.Add(new GeoPoint(a.X, b.Y));
         }
 
-        return new ConnectorGeometry(a, segments);
+        points.Add(b);
+        return points;
     }
+
+    /// <summary>Converts a list of vertices into a straight-segment connector geometry.</summary>
+    private static ConnectorGeometry Polyline(IReadOnlyList<GeoPoint> points)
+    {
+        var segments = new List<ConnectorSegment>(points.Count - 1);
+        for (int i = 1; i < points.Count; i++)
+        {
+            segments.Add(new LineSegmentTo(points[i]));
+        }
+
+        return new ConnectorGeometry(points[0], segments);
+    }
+
+    /// <summary>
+    /// Converts a polyline into a connector geometry whose interior corners are filleted
+    /// with cubic arcs of at most <paramref name="radius"/> pixels.
+    /// </summary>
+    private static ConnectorGeometry RoundedPolyline(IReadOnlyList<GeoPoint> points, double radius)
+    {
+        var segments = new List<ConnectorSegment>();
+
+        for (int i = 1; i < points.Count - 1; i++)
+        {
+            GeoPoint prev = points[i - 1];
+            GeoPoint corner = points[i];
+            GeoPoint next = points[i + 1];
+
+            double inLen = Distance(prev, corner);
+            double outLen = Distance(corner, next);
+            if (inLen < 1e-6 || outLen < 1e-6)
+            {
+                segments.Add(new LineSegmentTo(corner));
+                continue;
+            }
+
+            double r = Math.Min(radius, Math.Min(inLen, outLen) / 2);
+            GeoPoint before = Lerp(corner, prev, r / inLen);
+            GeoPoint after = Lerp(corner, next, r / outLen);
+
+            segments.Add(new LineSegmentTo(before));
+            // Control points at the corner pull the cubic into a smooth quarter-round fillet.
+            segments.Add(new CubicSegmentTo(corner, corner, after));
+        }
+
+        segments.Add(new LineSegmentTo(points[^1]));
+        return new ConnectorGeometry(points[0], segments);
+    }
+
+    private static GeoPoint Lerp(GeoPoint from, GeoPoint to, double t)
+        => new(from.X + ((to.X - from.X) * t), from.Y + ((to.Y - from.Y) * t));
 }

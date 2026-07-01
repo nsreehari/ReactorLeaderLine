@@ -72,7 +72,8 @@ new LeaderLineProps(
 new LeaderLineProps(Start: a, End: b, Path: LeaderLinePath.Fluid);    // smooth S-curve (default)
 new LeaderLineProps(Start: a, End: b, Path: LeaderLinePath.Straight); // direct line
 new LeaderLineProps(Start: a, End: b, Path: LeaderLinePath.Arc);      // single curved arc
-new LeaderLineProps(Start: a, End: b, Path: LeaderLinePath.Grid);     // orthogonal (right-angle) legs
+new LeaderLineProps(Start: a, End: b, Path: LeaderLinePath.Magnet);   // straight lead off each socket, then curve
+new LeaderLineProps(Start: a, End: b, Path: LeaderLinePath.Grid, CornerRadius: 12); // orthogonal legs, rounded elbows
 ```
 
 ## Plugs, dashes, and labels

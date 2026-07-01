@@ -45,6 +45,7 @@ Place a `LeaderLine` as a sibling of the elements it connects, inside a shared
 | `EndLabel` | `string?` | `null` | Text near the end. |
 | `Visible` | `bool` | `true` | Hide without unmounting. |
 | `Opacity` | `double` | `1` | Overall opacity. |
+| `CornerRadius` | `double` | `0` | Fillets the right-angle elbows of `Grid` routing. Ignored by other styles. |
 
 ## Anchors
 
@@ -82,8 +83,10 @@ An arbitrary rectangle; the socket picks which side the line attaches to.
 ### `LeaderLinePath`
 
 `Straight`, `Arc`, `Fluid`, `Magnet`, `Grid`.
-`Fluid` is a smooth S-curve; `Grid` produces orthogonal right-angle legs.
-`Magnet` currently routes as `Fluid`.
+`Fluid` is a smooth S-curve; `Grid` produces orthogonal right-angle legs (fillet
+them with `CornerRadius`).
+`Magnet` leaves each endpoint straight along its socket for a short lead, then
+curves — keeping the plug docked to its side.
 
 ### `LeaderLineSocket`
 

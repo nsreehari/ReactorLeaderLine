@@ -68,5 +68,68 @@ public class PathBuilderTests
         Assert.Equal(5, PathBuilder.Distance(new GeoPoint(0, 0), new GeoPoint(3, 4)), 3);
     }
 
+    [Fact]
+    public void Magnet_LeavesEachEndpointStraightBeforeCurving()
+    {
+        ConnectorGeometry g = PathBuilder.Build(Start, End, LeaderLinePath.Magnet);
+
+        // A short straight lead, a cubic join, then a short straight lead into the end.
+        Assert.Equal(3, g.Segments.Count);
+        LineSegmentTo lead1 = Assert.IsType<LineSegmentTo>(g.Segments[0]);
+        Assert.IsType<CubicSegmentTo>(g.Segments[1]);
+        LineSegmentTo lead2 = Assert.IsType<LineSegmentTo>(g.Segments[2]);
+
+        // First lead travels along the start's outward direction (+x) and stays on the baseline.
+        Assert.True(lead1.To.X > g.Start.X);
+        Assert.True(IsClose(lead1.To.Y, g.Start.Y));
+
+        // Connector still terminates exactly at the end point.
+        Assert.Equal(new GeoPoint(200, 0), lead2.To);
+        Assert.Equal(new GeoPoint(200, 0), g.End);
+    }
+
+    [Fact]
+    public void Grid_WithoutCornerRadius_HasSharpElbows()
+    {
+        var start = new EndpointGeometry(new GeoPoint(0, 0), new GeoPoint(1, 0));
+        var end = new EndpointGeometry(new GeoPoint(200, 100), new GeoPoint(-1, 0));
+
+        ConnectorGeometry g = PathBuilder.Build(start, end, LeaderLinePath.Grid, cornerRadius: 0);
+
+        Assert.All(g.Segments, s => Assert.IsType<LineSegmentTo>(s));
+    }
+
+    [Fact]
+    public void Grid_WithCornerRadius_FilletsElbowsWithCubics()
+    {
+        var start = new EndpointGeometry(new GeoPoint(0, 0), new GeoPoint(1, 0));
+        var end = new EndpointGeometry(new GeoPoint(200, 100), new GeoPoint(-1, 0));
+
+        ConnectorGeometry sharp = PathBuilder.Build(start, end, LeaderLinePath.Grid, cornerRadius: 0);
+        ConnectorGeometry rounded = PathBuilder.Build(start, end, LeaderLinePath.Grid, cornerRadius: 16);
+
+        // Rounding introduces cubic fillet segments that the sharp version does not have.
+        Assert.Contains(rounded.Segments, s => s is CubicSegmentTo);
+        Assert.DoesNotContain(sharp.Segments, s => s is CubicSegmentTo);
+
+        // The routing still starts and ends at the same points.
+        Assert.Equal(sharp.Start, rounded.Start);
+        Assert.Equal(sharp.End, rounded.End);
+    }
+
+    [Fact]
+    public void Grid_CornerRadius_IsClampedToHalfTheShorterLeg()
+    {
+        // Legs are only 20px long here; an oversized radius must not overshoot past the corner.
+        var start = new EndpointGeometry(new GeoPoint(0, 0), new GeoPoint(1, 0));
+        var end = new EndpointGeometry(new GeoPoint(20, 20), new GeoPoint(-1, 0));
+
+        ConnectorGeometry rounded = PathBuilder.Build(start, end, LeaderLinePath.Grid, cornerRadius: 1000);
+
+        Assert.Equal(new GeoPoint(0, 0), rounded.Start);
+        Assert.Equal(new GeoPoint(20, 20), rounded.End);
+        Assert.Contains(rounded.Segments, s => s is CubicSegmentTo);
+    }
+
     private static bool IsClose(double a, double b) => System.Math.Abs(a - b) < 1e-6;
 }

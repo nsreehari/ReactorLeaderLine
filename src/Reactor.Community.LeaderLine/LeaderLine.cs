@@ -92,7 +92,7 @@ public sealed class LeaderLine : Component<LeaderLineProps>
             ? SocketResolver.ResolveRect(eb, endSocket, startRef)
             : SocketResolver.ResolvePoint(endRef, startRef);
 
-        return PathBuilder.Build(start, end, p.Path);
+        return PathBuilder.Build(start, end, p.Path, p.CornerRadius);
     }
 
     private static bool TryResolveReference(

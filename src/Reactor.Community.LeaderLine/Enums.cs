@@ -18,8 +18,9 @@ public enum LeaderLinePath
     Fluid,
 
     /// <summary>
-    /// A fluid curve that first leaves each endpoint straight along its socket before
-    /// curving. Approximated as <see cref="Fluid"/> in v0.1.
+    /// A curve that first leaves each endpoint straight along its socket direction for a
+    /// short lead, then joins the two leads with a smooth cubic — keeping each plug
+    /// "docked" to its side before the curve begins.
     /// </summary>
     Magnet,
 

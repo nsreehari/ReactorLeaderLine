@@ -5,6 +5,27 @@ All notable changes to `Reactor.Community.LeaderLine` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-preview.1] - 2026-07-01
+
+Tracks Reactor `0.1.0-preview.11`.
+
+### Added
+
+- `LeaderLineProps.CornerRadius` — fillets the right-angle elbows of `Grid`
+  (orthogonal) routing. Defaults to `0` (sharp corners), so existing usage is
+  unchanged.
+
+### Changed
+
+- `Magnet` path routing is now distinct from `Fluid`: the connector leaves each
+  endpoint straight along its socket for a short lead before curving, keeping the
+  plug "docked" to its side.
+
+### Deferred
+
+- Mouse-follow / hover anchor, polygon area anchors, and an imperative
+  `RefreshPosition` API remain deferred to a later preview.
+
 ## [0.1.0-preview.1] - 2026-07-01
 
 Initial preview, tracking Reactor `0.1.0-preview.11`.
