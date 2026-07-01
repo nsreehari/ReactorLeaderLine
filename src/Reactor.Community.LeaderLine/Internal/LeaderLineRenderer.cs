@@ -63,8 +63,8 @@ internal static class LeaderLineRenderer
                 .WithKey($"ll-outline-{key++}"));
         }
 
-        // Main stroke. The dash pattern uses the declarative StrokeDashArray modifier;
-        // only the (imperative) marching-ants animation and dash cap fall back to .Set.
+        // Main stroke. The dash pattern and round dash cap use declarative modifiers;
+        // only the (imperative) marching-ants animation falls back to .Set.
         PathElement stroke = StrokePath(g)
             .Stroke(StrokeBrush())
             .StrokeThickness(p.Size)
@@ -75,14 +75,12 @@ internal static class LeaderLineRenderer
             double unit = Math.Max(p.Size, 0.1);
             stroke = stroke
                 .StrokeDashArray(dash.Length / unit, dash.Gap / unit)
-                .Set(path =>
-                {
-                    path.StrokeDashCap = PenLineCap.Round;
-                    if (dash.Animate)
-                    {
-                        AnimateDash(path, dash, unit);
-                    }
-                });
+                .StrokeDashCap(PenLineCap.Round);
+
+            if (dash.Animate)
+            {
+                stroke = stroke.Set(path => AnimateDash(path, dash, unit));
+            }
         }
 
         children.Add(stroke.WithKey($"ll-stroke-{key++}"));
