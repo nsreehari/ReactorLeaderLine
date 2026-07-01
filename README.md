@@ -102,6 +102,28 @@ new LeaderLineProps(
 See [samples/](samples/Reactor.Community.LeaderLine.Sample) for a runnable app that
 demonstrates every path style, animated dashes, labels, and live re-positioning.
 
+## Theming
+
+A connector that does not set an explicit `Color` / `OutlineColor` follows the active
+WinUI theme: the stroke uses the **system accent** and the outline halo uses the
+**page surface**, resolved for the current light/dark scheme. The component re-renders
+and re-resolves automatically when the theme flips — no wiring required.
+
+```csharp
+// No Color: the stroke is the themed system accent.
+new LeaderLineProps(Start: a, End: b, EndPlug: LeaderLinePlug.Arrow);
+```
+
+To set defaults for a whole subtree, provide a `LeaderLineTheme` through Reactor
+context. Precedence per colour is: explicit prop → context → theme default.
+
+```csharp
+VStack(0, /* ...connectors... */)
+    .Provide(LeaderLineContext.Theme, new LeaderLineTheme(
+        Color: Color.FromArgb(255, 46, 125, 246),
+        OutlineColor: Colors.White));
+```
+
 ## Documentation
 
 - [docs/api.md](docs/api.md) — full prop and type reference.

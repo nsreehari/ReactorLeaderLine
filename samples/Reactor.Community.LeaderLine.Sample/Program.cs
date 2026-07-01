@@ -50,14 +50,15 @@ internal sealed class SampleApp : Component
             Box("Target", 560, targetY + 160, boxTarget, Teal),
             Box("Note", 140, 420, boxNote, Amber),
 
+            // No explicit Color: the stroke follows the active theme's system accent
+            // (and re-renders when the theme flips between light and dark).
             Component<LeaderLine, LeaderLineProps>(new LeaderLineProps(
                 Start: new ElementAnchor(() => boxSource.Current),
                 End: new ElementAnchor(() => boxTarget.Current),
                 Path: LeaderLinePath.Fluid,
                 EndPlug: LeaderLinePlug.Arrow,
-                Color: Indigo,
                 Size: 2.4,
-                MiddleLabel: "fluid")),
+                MiddleLabel: "themed accent")),
 
             Component<LeaderLine, LeaderLineProps>(new LeaderLineProps(
                 Start: new ElementAnchor(() => boxSource.Current, LeaderLineSocket.Bottom),

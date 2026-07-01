@@ -30,7 +30,7 @@ Place a `LeaderLine` as a sibling of the elements it connects, inside a shared
 | `Start` | `LeaderLineAnchor` | — (required) | Where the line begins. |
 | `End` | `LeaderLineAnchor` | — (required) | Where the line ends. |
 | `Path` | `LeaderLinePath` | `Fluid` | Routing style. |
-| `Color` | `Color?` | `null` (indigo default) | Stroke color. |
+| `Color` | `Color?` | `null` (themed accent) | Stroke color. When `null`, follows the active theme's system accent, then any `LeaderLineContext.Theme` value. |
 | `Size` | `double` | `2` | Stroke thickness. |
 | `StartPlug` | `LeaderLinePlug` | `None` | Marker at the start. |
 | `EndPlug` | `LeaderLinePlug` | `Arrow` | Marker at the end. |
@@ -39,7 +39,7 @@ Place a `LeaderLine` as a sibling of the elements it connects, inside a shared
 | `Gradient` | `LeaderLineGradient?` | `null` | Two-stop gradient stroke. |
 | `DropShadow` | `LeaderLineDropShadow?` | `null` | Soft offset underlay. |
 | `Outline` | `bool` | `false` | Draw a contrasting halo behind the stroke. |
-| `OutlineColor` | `Color?` | `null` | Halo color when `Outline` is set. |
+| `OutlineColor` | `Color?` | `null` | Halo color when `Outline` is set. When `null`, follows the active theme's page surface, then any `LeaderLineContext.Theme` value. |
 | `StartLabel` | `string?` | `null` | Text near the start. |
 | `MiddleLabel` | `string?` | `null` | Text near the midpoint. |
 | `EndLabel` | `string?` | `null` | Text near the end. |
@@ -47,6 +47,35 @@ Place a `LeaderLine` as a sibling of the elements it connects, inside a shared
 | `Opacity` | `double` | `1` | Overall opacity. |
 | `CornerRadius` | `double` | `0` | Fillets the right-angle elbows of `Grid` routing. Ignored by other styles. |
 | `RefreshToken` | `object?` | `null` | Change this value to force a re-measure/re-route (declarative "refresh now"). |
+
+## Theming and context
+
+When a connector does not set an explicit `Color` / `OutlineColor`, colors are derived
+from the active WinUI theme via `UseIsDarkTheme()` (the component re-renders when the
+scheme flips). Precedence per color is: explicit prop → `LeaderLineContext.Theme` →
+theme default.
+
+### `LeaderLineTheme`
+
+`sealed record LeaderLineTheme(Color? Color = null, Color? OutlineColor = null, Color? LabelColor = null)`
+
+Default connector styling for a subtree. Every member is optional; a `null` member
+falls through to the theme-derived default. `LabelColor` defaults to the resolved
+stroke color.
+
+### `LeaderLineContext.Theme`
+
+`static readonly Context<LeaderLineTheme>` — provide it to set defaults for all
+connectors beneath a point in the tree:
+
+```csharp
+content.Provide(LeaderLineContext.Theme, new LeaderLineTheme(Color: brandColor));
+```
+
+| Theme default | Source resource | Fallback |
+| --- | --- | --- |
+| Stroke | `AccentFillColorDefaultBrush` (system accent) | indigo |
+| Outline halo | `SolidBackgroundFillColorBaseBrush` (page surface) | white / near-black by scheme |
 
 ## Anchors
 

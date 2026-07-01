@@ -16,18 +16,22 @@ using LineSegment = Microsoft.UI.Xaml.Media.LineSegment;
 namespace Reactor.Community.LeaderLine.Internal;
 
 /// <summary>
+/// Theme-resolved connector colours passed from <see cref="LeaderLine"/> (which owns the
+/// hooks) to the pure renderer. Each colour has already had the precedence
+/// prop -&gt; context -&gt; theme applied.
+/// </summary>
+internal readonly record struct LeaderLineResolvedStyle(Color Stroke, Color Outline, Color Label);
+
+/// <summary>
 /// Projects a resolved <see cref="ConnectorGeometry"/> and its styling onto Reactor
 /// elements: the stroke path, optional outline/shadow underlays, endpoint plugs, and
 /// labels. Pure element construction — no hooks, no measurement.
 /// </summary>
 internal static class LeaderLineRenderer
 {
-    private static readonly Color DefaultStroke = Color.FromArgb(255, 92, 107, 192);
-    private static readonly Color DefaultOutline = Color.FromArgb(255, 255, 255, 255);
-
-    public static void BuildVisuals(List<Element> children, ConnectorGeometry g, LeaderLineProps p)
+    public static void BuildVisuals(List<Element> children, ConnectorGeometry g, LeaderLineProps p, LeaderLineResolvedStyle style)
     {
-        Color strokeColor = p.Color ?? DefaultStroke;
+        Color strokeColor = style.Stroke;
         Brush StrokeBrush() => p.Gradient is { } grad
             ? MakeGradient(grad, g.Start, g.End)
             : new SolidColorBrush(strokeColor);
@@ -53,7 +57,7 @@ internal static class LeaderLineRenderer
         if (p.Outline)
         {
             children.Add(StrokePath(g)
-                .Stroke(new SolidColorBrush(p.OutlineColor ?? DefaultOutline))
+                .Stroke(new SolidColorBrush(style.Outline))
                 .StrokeThickness(p.Size + 4)
                 .Opacity(p.Opacity)
                 .WithKey($"ll-outline-{key++}"));
@@ -96,9 +100,9 @@ internal static class LeaderLineRenderer
         }
 
         // Labels.
-        AddLabel(children, p.StartLabel, g.Start, strokeColor, p, ref key, "s");
-        AddLabel(children, p.MiddleLabel, Midpoint(g.Start, g.End), strokeColor, p, ref key, "m");
-        AddLabel(children, p.EndLabel, g.End, strokeColor, p, ref key, "e");
+        AddLabel(children, p.StartLabel, g.Start, style.Label, p, ref key, "s");
+        AddLabel(children, p.MiddleLabel, Midpoint(g.Start, g.End), style.Label, p, ref key, "m");
+        AddLabel(children, p.EndLabel, g.End, style.Label, p, ref key, "e");
     }
 
     private static PathElement StrokePath(ConnectorGeometry g)

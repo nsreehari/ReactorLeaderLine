@@ -5,6 +5,22 @@ All notable changes to `Reactor.Community.LeaderLine` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0-preview.1] - 2026-07-01
+
+Tracks Reactor `0.1.0-preview.11`.
+
+### Added
+
+- Theme-aware default colours. When a connector does not set an explicit `Color` /
+  `OutlineColor`, the stroke now follows the active WinUI **system accent** and the
+  outline halo follows the **page surface**, resolved for the current light/dark
+  scheme. The component calls `UseIsDarkTheme()` so it re-renders and re-resolves
+  when the theme flips. Explicit props still win and existing usage is unchanged.
+- `LeaderLineTheme` + `LeaderLineContext.Theme` — a Reactor context for supplying
+  default connector styling (`Color`, `OutlineColor`, `LabelColor`) to a whole
+  subtree via `.Provide(LeaderLineContext.Theme, new LeaderLineTheme(...))`.
+  Resolution precedence per colour is: explicit prop → context → theme default.
+
 ## [0.3.0-preview.1] - 2026-07-01
 
 Tracks Reactor `0.1.0-preview.11`.

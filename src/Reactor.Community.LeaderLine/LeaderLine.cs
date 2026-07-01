@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Media;
 using Reactor.Community.LeaderLine.Geometry;
 using Reactor.Community.LeaderLine.Internal;
 using Windows.Foundation;
+using Windows.UI;
 using static Microsoft.UI.Reactor.Factories;
 
 namespace Reactor.Community.LeaderLine;
@@ -27,6 +28,11 @@ public sealed class LeaderLine : Component<LeaderLineProps>
 {
     private const double PositionTolerance = 0.5;
 
+    // Fallback stroke when the active theme's accent brush cannot be resolved
+    // (for example before WinUI resources have loaded). Matches the previous
+    // hardcoded default so behaviour degrades gracefully.
+    private static readonly Color FallbackAccent = Color.FromArgb(255, 92, 107, 192);
+
     /// <summary>Builds the connector overlay and wires up automatic re-positioning.</summary>
     public override Element Render()
     {
@@ -34,6 +40,12 @@ public sealed class LeaderLine : Component<LeaderLineProps>
         var lastGeometry = UseRef<ConnectorGeometry?>(null);
         var pointerPos = UseRef<GeoPoint?>(null);
         var (geometry, setGeometry) = UseState<ConnectorGeometry?>(null);
+
+        // Follow the Reactor theme + context: UseIsDarkTheme re-renders this component
+        // whenever the effective colour scheme flips, and UseContext lets an ancestor
+        // supply default connector styling for a whole subtree.
+        bool isDark = UseIsDarkTheme();
+        LeaderLineTheme themeContext = UseContext(LeaderLineContext.Theme);
 
         // Resolve any pointer-follow tracking elements during render so the effect can
         // re-subscribe when they change, and so RefreshToken can force a recompute.
@@ -127,7 +139,8 @@ public sealed class LeaderLine : Component<LeaderLineProps>
         var children = new List<Element>();
         if (Props.Visible && geometry is not null)
         {
-            LeaderLineRenderer.BuildVisuals(children, geometry, Props);
+            LeaderLineResolvedStyle style = ResolveStyle(Props, themeContext, isDark);
+            LeaderLineRenderer.BuildVisuals(children, geometry, Props, style);
         }
 
         return Canvas(children.ToArray())
@@ -138,6 +151,26 @@ public sealed class LeaderLine : Component<LeaderLineProps>
                 canvas.Background = null;
             });
     }
+
+    // Resolves the effective connector colours. Precedence for each colour is:
+    // explicit prop -> context default -> value derived from the active theme
+    // (system accent for the stroke, page surface for the outline halo).
+    private static LeaderLineResolvedStyle ResolveStyle(LeaderLineProps p, LeaderLineTheme context, bool isDark)
+    {
+        Color accent = ResolveThemeColor("AccentFillColorDefaultBrush", isDark, FallbackAccent);
+        Color surface = ResolveThemeColor(
+            "SolidBackgroundFillColorBaseBrush",
+            isDark,
+            isDark ? Color.FromArgb(255, 32, 32, 32) : Color.FromArgb(255, 255, 255, 255));
+
+        Color stroke = p.Color ?? context.Color ?? accent;
+        Color outline = p.OutlineColor ?? context.OutlineColor ?? surface;
+        Color label = context.LabelColor ?? stroke;
+        return new LeaderLineResolvedStyle(stroke, outline, label);
+    }
+
+    private static Color ResolveThemeColor(string resourceKey, bool isDark, Color fallback)
+        => ThemeRef.Resolve(resourceKey, isDark) is SolidColorBrush brush ? brush.Color : fallback;
 
     private static ConnectorGeometry? Compute(Canvas root, LeaderLineProps p, GeoPoint? pointer)
     {
