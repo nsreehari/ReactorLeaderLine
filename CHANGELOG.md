@@ -5,6 +5,18 @@ All notable changes to `Reactor.Community.LeaderLine` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0-preview.2] - 2026-07-02
+
+Tracks Reactor `0.1.0-preview.11`.
+
+### Fixed
+
+- Connectors never rendered because the overlay canvas was captured via `UseRef`,
+  so the measurement effect saw a null canvas on first render and never re-ran once
+  the canvas was attached. The overlay canvas is now surfaced via `UseState`, which
+  triggers the measurement effect to run once the canvas is attached. Connectors,
+  arrows, dashes and labels now render as expected.
+
 ## [0.4.0-preview.1] - 2026-07-01
 
 Tracks Reactor `0.1.0-preview.11`.

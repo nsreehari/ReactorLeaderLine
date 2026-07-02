@@ -13,7 +13,7 @@
     <!-- NuGet packaging -->
     <IsPackable>true</IsPackable>
     <PackageId>Reactor.Community.LeaderLine</PackageId>
-    <Version>0.4.0-preview.1</Version>
+    <Version>0.4.0-preview.2</Version>
     <Description>A declarative WinUI connector primitive for Microsoft.UI.Reactor. Draws leader lines (arrows/connectors) between elements or points, with configurable sockets, path routing, plugs, labels, and effects. A Reactor-native port of the leader-line concept.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
